@@ -1,0 +1,233 @@
+using System;
+using MonoBrick.EV3;
+using System.Threading;
+
+namespace Application
+{
+    public static class QMAProgram
+    {
+
+        public static Brick<TouchSensor, Sensor, Sensor, Sensor> UK = null;
+        public static UInt16 touchCount = 0, lightsensorval = 0, ultrasonicsensorval = 0;
+        public static Boolean Found = false;
+        public static int facing = 2, row=4, column=3, movesMade=0;    // 0-North, 1-East, 2-South, 3-West
+        public static int[] moveTracker = new int[30];
+       
+
+        //----------------------------------------------Maze Function---------------------------------------------------------------------
+        //A left
+        //D right
+
+        static void facingCheck()
+        {
+
+            if (facing == 4)
+            {
+                facing = 0;
+            }
+            else if (facing == -1)
+            {
+                facing = 3;
+            }
+
+        }
+
+        static void updateMap()
+        {
+            if (facing == 0) { row++; }
+            if (facing == 1) { column++; }
+            if (facing == 2) { row--; }
+            if (facing == 3) { column--; }
+
+            moveTracker[movesMade] = facing;
+            movesMade++;
+
+
+        }
+
+
+        static void right90()
+        {
+            UK.MotorA.On(-70, 950, false);
+            UK.MotorD.On(70, 950, false);
+            facing++;
+            facingCheck();
+            System.Threading.Thread.Sleep(3000);
+            UK.MotorA.On(7, 2, false);
+            UK.MotorD.On(-7, 2, false);
+            System.Threading.Thread.Sleep(500);
+            UK.MotorA.On(-7, 7, false);
+            UK.MotorD.On(-7, 7, false);
+            System.Threading.Thread.Sleep(500);
+            
+
+        }
+
+        static void left90()
+        {
+            UK.MotorA.On(70, 950, false);
+            UK.MotorD.On(-70, 950, false);
+            facing--;
+            facingCheck();
+            System.Threading.Thread.Sleep(3000);
+            UK.MotorA.On(-7, 2, false);
+            UK.MotorD.On(7, 2, false);
+            System.Threading.Thread.Sleep(500);
+            UK.MotorA.On(-7, 7, false);
+            UK.MotorD.On(-7, 7, false);
+            System.Threading.Thread.Sleep(500);
+           
+        }
+
+        static void forward()
+        {
+            UK.MotorA.On(-70, 2320, false);
+            UK.MotorD.On(-70, 2320, false);            
+            updateMap();
+            System.Threading.Thread.Sleep(7000);
+
+        }
+
+        static void uTurn()
+        {
+            UK.MotorA.On(20, 360, false);
+            UK.MotorD.On(-20, 360, false);
+            System.Threading.Thread.Sleep(7000);
+        }
+       
+
+        static void Main(string[] args)
+        {
+            try
+            {
+                UK = new Brick<TouchSensor, Sensor, Sensor, Sensor>("COM3");
+
+                UK.Connection.Close();
+                UK.Connection.Open();
+
+                UK.MotorA.ResetTacho();
+                UK.MotorD.ResetTacho();
+                UK.Sensor2 = new ColorSensor(ColorMode.Reflection);
+                UK.Sensor3 = new IRSensor(IRMode.Proximity);
+                UK.Sensor1.Mode = TouchMode.Count;
+                UK.Sensor1.Reset();
+
+                while (row != 5 || column != 3)  //put target values here
+                {
+                    
+                    ultrasonicsensorval = Convert.ToUInt16(UK.Sensor3.ReadAsString());
+                    if (ultrasonicsensorval > 7)
+                    {
+                        right90();
+                        ultrasonicsensorval = Convert.ToUInt16(UK.Sensor3.ReadAsString());
+                        if (ultrasonicsensorval > 7)
+                        {
+                            forward();
+                        }
+                        else
+                        {
+                            left90();
+                            forward();
+                        }
+                    }
+                    else
+                    {
+                        right90();
+                        ultrasonicsensorval = Convert.ToUInt16(UK.Sensor3.ReadAsString());
+                         if (ultrasonicsensorval > 7)
+                         {
+                             forward();
+                         }
+                         else
+                         {
+                             left90();
+                             left90();
+                             ultrasonicsensorval = Convert.ToUInt16(UK.Sensor3.ReadAsString());
+                             if (ultrasonicsensorval > 7)
+                             {
+                                 forward();
+                             }
+
+                         }
+                        
+                    }
+
+                   
+                        int[] tempMoveTracker = new int[30];
+                        int tempTracker = 0;
+
+                        for (int i=0;i<29;i++)
+                        {
+                            if ((moveTracker[i] - moveTracker[i + 1]) != 2 && (moveTracker[i] - moveTracker[i + 1]) != -2)
+                            {
+                                tempMoveTracker[tempTracker] = moveTracker[i];
+                                tempTracker++;                                
+                            }
+                            else { movesMade = movesMade - 2; }
+
+                        }
+                        int[] tempMoveTracker2 = new int[30];
+                        int tempTracker2 = 0;
+
+                        for (int i = 0; i < 29; i++)
+                        {
+                            if ((tempMoveTracker[i] - tempMoveTracker[i + 1]) != 2 && (tempMoveTracker[i] - tempMoveTracker[i + 1]) != -2)
+                            {
+                                tempMoveTracker2[tempTracker2] = tempMoveTracker[i];
+                                tempTracker2++;
+                            }
+                            else { movesMade = movesMade - 2; }
+
+                        }
+                        int[] tempMoveTracker3 = new int[30];
+                        int tempTracker3 = 0;
+
+                        for (int i = 0; i < 29; i++)
+                        {
+                            if ((tempMoveTracker2[i] - tempMoveTracker2[i + 1]) != 2 && (tempMoveTracker2[i] - tempMoveTracker2[i+1]) != -2)
+                            {
+                                tempMoveTracker3[tempTracker3] = tempMoveTracker2[i];
+                                tempTracker3++;
+                            }
+                            else { movesMade = movesMade - 2; }
+
+                        }
+
+                        int[] reverseDirections = new int[movesMade];
+
+                        for (int i = 0; i <= movesMade; i++)
+                        {
+                            reverseDirections[i] = tempMoveTracker3[movesMade - i];
+                        }
+
+                    int reverseMoves=0;
+                    while (row != 4 || column != 3)  //put start values here
+                    {
+                        if (facing==reverseDirections[reverseMoves])
+                        { forward();
+                        reverseMoves++;
+                        }
+                        else
+                        {
+                            right90();
+                        }
+
+                    }
+
+                    
+
+                }
+
+
+
+            }
+
+            catch (Exception e)
+            {
+                Console.WriteLine("Error: " + e.Message);
+                Console.WriteLine("Press any key to end...");
+                Console.ReadKey();
+            }
+        }
+    }
+}

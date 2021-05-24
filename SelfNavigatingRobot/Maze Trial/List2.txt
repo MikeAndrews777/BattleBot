@@ -1,0 +1,38 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace testprogram
+{
+    class Program
+    {
+        static List<int> moveHistory(int move)
+        {
+            List<int> moveTrack = new List<int>();
+
+            moveTrack.Add(move);
+            return moveTrack;
+        }
+        static void Main(string[] args)
+        {
+ 
+            Console.WriteLine("Enter 10 numbers from 0-3 (ctrl +z) to stop : ");
+            string input;
+
+            do
+            {
+
+                input = Console.ReadLine();
+                int facingMove;
+                facingMove = Convert.ToInt16(input);
+                Console.WriteLine(moveHistory(facingMove));
+                //if (input != null)
+                //    Console.WriteLine("      " + input);
+            } while (input != null);
+
+            
+        }
+    }
+}

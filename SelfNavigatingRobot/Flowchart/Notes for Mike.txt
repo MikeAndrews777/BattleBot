@@ -1,0 +1,3 @@
+I change the first function --- wallInfomartion() to facingInformation()
+and for the straightenOut function, could you draw it on a paper and send it to me? 
+cause i think you know better the details of that function
